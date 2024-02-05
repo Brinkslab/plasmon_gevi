@@ -1,0 +1,151 @@
+n=2*pi*R/r+0.5;
+
+#Nanostar
+addsphere;
+set('name','core');
+set('radius',R*1e-9);
+set('material','Au (Gold) - CRC Copy 1');
+set('x',0);
+set('y',0);
+set('z',0);
+
+for(i=0;i<n;i=i+1)
+{
+    addrect;
+    set('name','nullrect'+num2str(i));
+    set('override mesh order from material database',true);
+    set('mesh order',5);
+    set('alpha',0);
+    set('x span',(2*R+L_tip)*1e-9);
+    set('y span',2*r*1e-9);
+    set('z span',2*r*1e-9);
+    set('x',(R+L_tip/2)*1e-9);
+    set('y',0);
+    set('z',0);
+    addtogroup('tip'+num2str(i));
+        
+    addobject('rd_tip_cone');
+    set('name','tipgold'+num2str(i));
+    set('material','Au (Gold) - CRC Copy 1');
+    set('z span',L_tip*1e-9);
+    set('cladding radius',r*1e-9);
+    set('tip radius',r_tip*1e-9);
+    set('cone angle',theta);
+    set('x',-(R+L_tip/3)*1e-9);
+    set('y',0);
+    set('z',0);
+    addtogroup('tip'+num2str(i));
+    
+    select('tip'+num2str(i));
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set('first axis','x');
+    set('second axis','y');
+    set('third axis','z');
+    set('rotation 1',0);
+    set('rotation 2',360/n*i);
+    set('rotation 3',0);
+    addtogroup('round');
+}
+
+for(i=1;i<n/2;i=i+1)
+{
+    select('round');
+    copy;
+    set('name','round'+num2str(i));
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set('first axis','x');
+    set('second axis','y');
+    set('third axis','z');
+    set('rotation 1',2*360/n*i);
+    set('rotation 2',0);
+    set('rotation 3',0);
+}
+
+#Water
+addrect;
+set('name','water');
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', 2e-6);
+set('y span', 2e-6);
+set('z span', 2e-6);
+set('material','H2O (Water) - Palik Copy 1');
+set('override mesh order from material database',true);
+set('mesh order',3);
+
+#Simulation region
+addfdtd;
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (800+2*R+2*L_tip)*1e-9);
+set('y span', (800+2*R+2*L_tip)*1e-9);
+set('z span', (800+2*R+2*L_tip)*1e-9);
+set('simulation time',simtime*1e-15);
+set('mesh accuracy',meshacc);
+set('x min bc',5); #simmetry
+set('y min bc',4); #simmetry
+
+#TFSF Source
+addtfsf;
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (8*R)*1e-9);
+set('y span', (8*R)*1e-9);
+set('z span', (8*R)*1e-9);
+set('wavelength start',lambda_start*1e-9);
+set('wavelength stop',lambda_stop*1e-9);
+set('direction',1); #Backward direction
+
+#Uniform mesh inside TFSF region
+addmesh;
+set('dx',R/detail*1e-9);
+set('dy',R/detail*1e-9);
+set('dz',R/detail*1e-9);
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (8*R)*1e-9);
+set('y span', (8*R)*1e-9);
+set('z span', (8*R)*1e-9);
+
+#Field monitors
+addpower;
+set('name','E');
+set('monitor type',8);
+set('x',(3/2*R+D+L_tip)*1e-9);
+set('y',0);
+set('z',0);
+set('x span', R*1e-9);
+set('y span', R*1e-9);
+set('z span', R*1e-9);
+
+#Cross section monitors
+addobject('cross_section');
+set('name','cs_abs');
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span',(7*R)*1e-9);
+set('y span',(7*R)*1e-9);
+set('z span',(7*R)*1e-9);
+
+addobject('cross_section');
+set('name','cs_sca');
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span',(9*R)*1e-9);
+set('y span',(9*R)*1e-9);
+set('z span',(9*R)*1e-9);
+
+
+
+#Global monitors
+setglobalmonitor("frequency points",n_freq);

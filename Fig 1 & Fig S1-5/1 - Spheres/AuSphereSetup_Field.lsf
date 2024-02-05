@@ -1,0 +1,92 @@
+#################################################
+# Radius R to be set before running this script #
+#################################################
+
+#Nanoparticle
+addsphere;
+set('name','np');
+set('x',0);
+set('y',0);
+set('z',0);
+set('radius',R*1e-9);
+set('material','Au (Gold) - CRC Copy 1');
+
+#Water
+addrect;
+set('name','water');
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', 2e-6);
+set('y span', 2e-6);
+set('z span', 2e-6);
+set('material','H2O (Water) - Palik Copy 1');
+set('override mesh order from material database',true);
+set('mesh order',3);
+
+#Simulation region
+addfdtd;
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (800+2*R)*1e-9);
+set('y span', (800+2*R)*1e-9);
+set('z span', (800+2*R)*1e-9);
+set('simulation time',simtime*1e-15);
+set('mesh accuracy',meshacc);
+set('x min bc',5); #simmetry
+set('y min bc',4); #simmetry
+
+#TFSF Source
+addtfsf;
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (6*R)*1e-9);
+set('y span', (6*R)*1e-9);
+set('z span', (6*R)*1e-9);
+set('wavelength start',lambda_start*1e-9);
+set('wavelength stop',lambda_stop*1e-9);
+set('direction',1); #Backward direction
+
+#Uniform mesh inside TFSF region
+addmesh;
+set('dx',R/detail*1e-9);
+set('dy',R/detail*1e-9);
+set('dz',R/detail*1e-9);
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (6*R)*1e-9);
+set('y span', (6*R)*1e-9);
+set('z span', (6*R)*1e-9);
+
+#Field monitors
+addpower;
+set('name','XY');
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (5*R)*1e-9);
+set('y span', (5*R)*1e-9);
+
+addpower;
+set('name','YZ');
+set('monitor type',5);
+set('x',(R+D)*1e-9);
+set('y',0);
+set('z',0);
+set('y span', (5*R)*1e-9);
+set('z span', (5*R)*1e-9);
+
+addpower;
+set('name','X');
+set('monitor type',2);
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', (5*R)*1e-9);
+
+
+#Global monitors
+setglobalmonitor("frequency points",n_freq);

@@ -1,0 +1,92 @@
+#Initialization
+clear; #clear all previously declared variables
+
+simtime=200; #simulation time in fs (autoshutoff level reached regardless)
+lambda_start=600; #wavelength start in nm
+lambda_stop=700; #wavelength stop in nm
+n_freq=100; #number of points in the frequency spectrum
+
+switchtolayout; #switch to layout mode
+deleteall; #delete previously created objects
+
+
+#Nanoparticle setup
+stlimport('M:\Blender\NanostarS2R25L10S3B0.9.stl',1e-8);
+set('name','nanostar');
+set('material','Au (Gold) - CRC');
+set('x',0);
+set('y',0);
+set('z',0);
+set('override mesh order from material database',true);
+set('mesh order',2);
+set('first axis','z');
+
+#Water
+addrect;
+set('name','water');
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', 1e-6);
+set('y span', 1e-6);
+set('z span', 1e-6);
+set('material','H2O (Water) - Palik');
+set('override mesh order from material database',true);
+set('mesh order',3);
+
+#Simulation region
+addfdtd;
+set('x',0);
+set('y',0);
+set('z',-5*1e-9);
+set('x span', 140*1e-9);
+set('y span', 140*1e-9);
+set('z span', 150*1e-9);
+set('simulation time',simtime*1e-15);
+
+#Uniform mesh inside the monitor region
+addmesh;
+set('dx',1e-10);
+set('dy',1e-10);
+set('dz',1e-10);
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', 140*1e-9);
+set('y span', 140*1e-9);
+set('z span', 140*1e-9);
+
+#Plane wave source
+addplane;
+set('x',0);
+set('y',0);
+set('z',-71*1e-9);
+set('x span', 280*1e-9);
+set('y span', 280*1e-9);
+set('wavelength start',lambda_start*1e-9);
+set('wavelength stop',lambda_stop*1e-9);
+set('direction',2); #Forward direction
+set('eliminate discontinuities',true);
+set('optimize for short pulse',true);
+
+#Field monitors
+addpower;
+set('monitor type',7); #2D Z-normal power monitor
+set('x',0);
+set('y',0);
+set('z',0);
+set('x span', 140*1e-9);
+set('y span', 140*1e-9);
+
+addpower;
+set('monitor type',5); #2D X-normal power monitor
+set('x',39*1e-9); #monitor 4nm distant from the surface of the nanoparticle
+set('y',0);
+set('z',0);
+set('y span', 140*1e-9);
+set('z span', 140*1e-9);
+
+setglobalmonitor("frequency points",n_freq); #Set global monitors frequency points
+setglobalmonitor("use wavelength spacing",true);
+
+run; #Start the simulation

@@ -1,0 +1,156 @@
+deleteall;
+clear;
+closeall;
+
+N_sim = 10;
+radius_low = 10;
+radius_high = 100;
+cntr = 0;
+####initial conditions####
+
+#particle properties
+
+#FDTD properties
+FDTD_ratio = 20; #ratio between FDTD and particle radius
+time = 150; #simulation time in fs
+FDTD_accuracy = 3; #accuracy between 1-8
+
+#mesh properties
+mesh_ratio = 6; #ratio between mesh and particle radius
+mesh_accuracy_ratio = 30; #number of meshes per radius
+
+#light properties
+lambda_start = 300; #lowest wavelength in nm
+lambda_stop = 800; #highest wavelength in nm
+
+#monitor properties
+N_freq = lambda_stop - lambda_start + 1; #1 nm accuracy
+distance = 4; #distance of monitor from particle in nm
+H = 1; #height of monitor per radius
+W = 0.75; #width of monitor per radius
+
+#Global monitor properties
+setglobalmonitor("frequency points",N_freq); #global frequency points
+
+leg = cell(N_sim); #legend creation
+for(k=1:N_sim)
+{
+    leg{k} = "dummy";
+}
+
+### IMPROVE EFFICIENCY
+for (j=linspace(radius_low,radius_high,N_sim))
+{
+    deleteall;
+    cntr = cntr +1;
+    
+    radius = j; #radius of sphere in nm
+    addsphere; #particle
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set('radius',radius*1e-9);
+    set('material','Au (Gold) - CRC Copy 1');
+    
+    addfdtd; #FDTD
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set('x min bc','anti-symmetric');
+    set('y min bc','symmetric');
+    set('x span',FDTD_ratio*radius*1e-9);
+    set('y span',FDTD_ratio*radius*1e-9);
+    set('z span',FDTD_ratio*radius*1e-9);
+    set('simulation time', time*1e-15);
+    set('mesh accuracy',FDTD_accuracy);
+    
+    #water
+    addrect;
+    set('name','water');
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set('x span',(FDTD_ratio+5)*radius*1e-9);
+    set('y span',(FDTD_ratio+5)*radius*1e-9);
+    set('z span',(FDTD_ratio+5)*radius*1e-9);
+    set('material',"H2O (Water) - Palik Copy 1");
+    set('override mesh order from material database',1);
+    set('mesh order',3);
+    set('render type','wireframe');
+    
+    
+    
+    addmesh; #mesh
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set('x span',mesh_ratio*radius*1e-9);
+    set('y span',mesh_ratio*radius*1e-9);
+    set('z span',mesh_ratio*radius*1e-9);
+    set('dx',radius/mesh_accuracy_ratio*1e-9);
+    set('dy',radius/mesh_accuracy_ratio*1e-9);
+    set('dz',radius/mesh_accuracy_ratio*1e-9);
+    
+    addtfsf; #plane wave
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set("injection axis","z");
+    set("direction","forward");
+    set("wavelength start", lambda_start*1e-9);
+    set("wavelength stop", lambda_stop*1e-9);
+    set('x span',mesh_ratio*radius*1e-9);
+    set('y span',mesh_ratio*radius*1e-9);
+    set('z span',mesh_ratio*radius*1e-9);
+    
+    #addplane; #plane wave
+    #set('x',0);
+    #set('y',0);
+    #set('z',-(mesh_ratio*radius/2+(FDTD_ratio*radius/2-mesh_ratio*radius/2)/2)*1e-9); #between bottom particle and bottom fdtd
+    #set("injection axis","z");
+    #set("direction","forward");
+    #set("wavelength start", lambda_start*1e-9);
+    #set("wavelength stop", lambda_stop*1e-9);
+    #set('x span',mesh_ratio*radius*1e-9);
+    #set('y span',mesh_ratio*radius*1e-9);
+    
+    addpower; #zoomed monitor
+    set("name","zoomed monitor");
+    set("monitor type",8);
+    set('x',(radius+distance+W/2*radius)*1e-9);
+    set('y',0);
+    set('z',0);
+    set('x span',W*radius*1e-9);
+    set('y span',W*radius*1e-9);
+    set('z span',H*radius*1e-9);
+    
+    addpower; #full monitor
+    set("name","full monitor");
+    set("monitor type",6);
+    set('x',0);
+    set('y',0);
+    set('z',0);
+    set('x span',mesh_ratio*radius*1e-9);
+    set('z span',mesh_ratio*radius*1e-9);
+    
+    run;
+    
+    E=getelectric("zoomed monitor");
+    E_mean =  zeros(N_sim,N_freq);
+    for (i=1:N_freq)
+    {
+        E_volume=E(1:end,1:end,1:end,i);
+        E_mean(cntr,i) = mean(E_volume);
+    }
+    lambda_plot = linspace(lambda_stop,lambda_start,N_freq);
+    plot(lambda_plot,E_mean(cntr,:),"lambda [nm]", "|E|^2/|E0|^2");
+    matlabfile = "Results_"+num2str(j)+"nm";
+    matlabsave(matlabfile,lambda_plot,E_mean);
+    holdon;
+    switchtolayout;
+    
+    leg{cntr} = num2str(j)+"nm";
+    legend(leg);
+    ?cntr;
+}
+holdoff;

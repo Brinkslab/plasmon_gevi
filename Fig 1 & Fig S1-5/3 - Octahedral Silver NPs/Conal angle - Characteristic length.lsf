@@ -1,0 +1,343 @@
+deleteall;
+clear;
+closeall;
+
+####initial conditions####
+
+run_sim = 1; #run simulation
+
+#particle properties
+material_particle = 'Ag (Silver) - Palik (0-2um) Copy 1';
+radius = 20;
+
+
+#spikes properties
+N_spikes2=2;
+N_spikes=4; #number of spikes
+theta = 25; #angle of cones
+length_spikes = 1.5; #function of radius, should be <2.0
+
+#FDTD properties
+FDTD_ratio = 10; #ratio between FDTD and particle radius
+time = 200; #simulation time in fs
+FDTD_accuracy = 4; #accuracy between 1-8
+
+#mesh properties
+mesh_ratio = 8; #ratio between mesh and particle radius
+mesh_accuracy_ratio = 30; #number of meshes per radius
+
+#light properties
+lambda_start = 300; #lowest wavelength in nm
+lambda_stop = 800; #highest wavelength in nm
+angle_light = 0;
+
+#full monitor properties
+full_monitor=1; #turn on full monitor
+
+#small monitor properties
+small_monitor = 1; #turn on small monitor
+
+H = 2; #height of monitor per radius
+W = 1; #width of monitor per radius
+
+#Global monitor properties
+N_freq = lambda_stop - lambda_start + 1; #1 nm accuracy
+setglobalmonitor("frequency points",N_freq); #global frequency points
+
+cntr = 0; #counter for plotting
+
+## ROTATIONS
+x_rotation_low = 0;
+x_rotation_high = 0;
+N_x_rotation = 1; #number of times to rotate
+
+y_rotation_low = 0;
+y_rotation_high = 0;
+N_y_rotation = 1;
+
+z_rotation_low = 0;
+z_rotation_high = 0;
+N_z_rotation = 1;
+
+
+angles_cone = [31,32,33,34,35,36,37,38,39,45,60];
+N_total = N_x_rotation*N_y_rotation*N_z_rotation*length(angles_cone);
+
+for(j=linspace(x_rotation_low,x_rotation_high,N_x_rotation))
+{
+    for(jj=1:length(angles_cone))
+    {
+        for(jjj=linspace(z_rotation_low,z_rotation_high,N_z_rotation))
+        {
+            jj = angles_cone(jj);
+            deleteall;
+            cntr = cntr +1;
+            
+            #particle properties
+            addsphere; #particle
+            set('x',0);
+            set('y',0);
+            set('z',0);
+            set('radius',radius*1e-9);
+            set('material',material_particle);
+            
+            for(i=1:N_spikes)
+            {
+                z_span = 2*radius*1e-9;
+                cladding_radius = 2*radius*1e-9;
+                tip_radius = 0.05*radius*1e-9;
+                cone_angle = jj;
+                
+                theta=tan(cone_angle*pi/180/2);
+                xs_tip=tip_radius-(tip_radius*sin(theta));
+                tip_length=z_span-tip_radius;
+                t=(tip_radius+tip_radius*sin(theta))/2;
+                
+                
+                #------------add cladding-------------
+                addcustom;
+                set("equation 1",
+                num2str(theta)+"*(x+"+num2str(tip_length/2*1e6)+")+"+num2str(tip_radius*1e6));
+                set("create 3D object by","revolution");
+                set("z span",cladding_radius*2);
+                set("y span",cladding_radius*2);
+                set("x span",tip_length+tip_radius*sin(theta));
+                set("x",xs_tip/2);
+                set("y",0);
+                set("z",0);
+                set("name","cladding"+num2str(i)+"A");
+                set('material',material_particle);
+                
+                #-----------add cladding tip--------------
+                addcustom;
+                set("create 3D object by","revolution");
+                set("equation 1","sqrt("+
+                num2str(tip_radius*1e6)+"^2-(x-"+
+                num2str(t*1e6)+")^2)");
+                set("x",-tip_length/2-tip_radius/2+xs_tip/2);
+                set("y",0);
+                set("z",0);
+                set("x span",xs_tip);
+                set("y span",tip_radius*2);
+                set("z span",tip_radius*2);
+                set("name","tip"+num2str(i)+"A");
+                set('material',material_particle);
+                
+                addstructuregroup;
+                set('x',0);
+                set('y',0);
+                set('z',0);
+                selectpartial(num2str(i)+"A");
+                addtogroup('structure group');
+                select('structure group');
+                set('name',"spike"+num2str(i)+"A");
+                
+                set("x",-length_spikes*radius*1e-9*sin(i*360/N_spikes*pi/180));
+                set("y",0);
+                set("z",-length_spikes*radius*1e-9*cos(i*360/N_spikes*pi/180));
+                set("first axis","y");
+                set("rotation 1",-90+i*360/N_spikes);
+                
+            }
+            
+            
+            for(i=1:N_spikes2)
+            {
+                z_span = 2*radius*1e-9;
+                cladding_radius = 2*radius*1e-9;
+                tip_radius = 0.05*radius*1e-9;
+                cone_angle = jj;
+                
+                theta=tan(cone_angle*pi/180/2);
+                xs_tip=tip_radius-(tip_radius*sin(theta));
+                tip_length=z_span-tip_radius;
+                t=(tip_radius+tip_radius*sin(theta))/2;
+                
+                
+                #------------add cladding-------------
+                addcustom;
+                set("equation 1",
+                num2str(theta)+"*(x+"+num2str(tip_length/2*1e6)+")+"+num2str(tip_radius*1e6));
+                set("create 3D object by","revolution");
+                set("z span",cladding_radius*2);
+                set("y span",cladding_radius*2);
+                set("x span",tip_length+tip_radius*sin(theta));
+                set("x",xs_tip/2);
+                set("y",0);
+                set("z",0);
+                set("name","cladding"+num2str(i)+"B");
+                set('material',material_particle);
+                
+                #-----------add cladding tip--------------
+                addcustom;
+                set("create 3D object by","revolution");
+                set("equation 1","sqrt("+
+                num2str(tip_radius*1e6)+"^2-(x-"+
+                num2str(t*1e6)+")^2)");
+                set("x",-tip_length/2-tip_radius/2+xs_tip/2);
+                set("y",0);
+                set("z",0);
+                set("x span",xs_tip);
+                set("y span",tip_radius*2);
+                set("z span",tip_radius*2);
+                set("name","tip"+num2str(i)+"B");
+                set('material',material_particle);
+                
+                addstructuregroup;
+                set('x',0);
+                set('y',0);
+                set('z',0);
+                selectpartial(num2str(i)+"B");
+                addtogroup('structure group');
+                select('structure group');
+                set('name',"spike"+num2str(i)+"B");
+                
+                set("x",-length_spikes*radius*1e-9*sin(i*360/N_spikes2*pi/180));
+                set("z",0);
+                set("y",-length_spikes*radius*1e-9*cos(i*360/N_spikes2*pi/180));
+                set("first axis","z");
+                set("rotation 1",90-i*360/N_spikes2);
+            }
+            
+            
+            #adding particle to structure group
+            addstructuregroup;
+            set('x',0);
+            set('y',0);
+            set('z',0);
+            selectpartial('sphere');
+            addtogroup('structure group');
+            selectpartial('spike');
+            addtogroup('structure group');
+            select('structure group');
+            set('first axis','x');
+            set('second axis','y');
+            set('third axis','z');
+            set('rotation 1',j);
+            set('rotation 2',jjj);
+            set('rotation 3',jjj);
+            
+            addfdtd; #FDTD
+            set('background index',1.333);
+            set('x',0);
+            set('y',0);
+            set('z',0);
+            set('x span',FDTD_ratio*radius*1e-9);
+            set('y span',FDTD_ratio*radius*1e-9);
+            set('z span',FDTD_ratio*radius*1e-9);
+            set('simulation time', time*1e-15);
+            set('mesh accuracy',FDTD_accuracy);
+            
+            #water
+            addrect;
+            set('name','water');
+            set('x',0);
+            set('y',0);
+            set('z',0);
+            set('x span',(FDTD_ratio+5)*radius*1e-9);
+            set('y span',(FDTD_ratio+5)*radius*1e-9);
+            set('z span',(FDTD_ratio+5)*radius*1e-9);
+            set('material',"H2O (Water) - Palik Copy 1");
+            set('override mesh order from material database',1);
+            set('mesh order',3);
+            set('render type','wireframe');
+            
+            
+            addmesh; #mesh
+            set('x',0);
+            set('y',0);
+            set('z',0);
+            set('x span',mesh_ratio*radius*1e-9);
+            set('y span',mesh_ratio*radius*1e-9);
+            set('z span',mesh_ratio*radius*1e-9);
+            set('dx',radius/mesh_accuracy_ratio*1e-9);
+            set('dy',radius/mesh_accuracy_ratio*1e-9);
+            set('dz',radius/mesh_accuracy_ratio*1e-9);
+            
+            addtfsf; #plane wave
+            set('angle theta',angle_light);
+            set('x',0);
+            set('y',0);
+            set('z',0);
+            set("injection axis","z");
+            set("direction","forward");
+            set("wavelength start", lambda_start*1e-9);
+            set("wavelength stop", lambda_stop*1e-9);
+            set('x span',mesh_ratio*radius*1e-9);
+            set('y span',mesh_ratio*radius*1e-9);
+            set('z span',mesh_ratio*radius*1e-9);
+            
+            #addplane; #plane wave
+            #set('x',0);
+            #set('y',0);
+            #set('z',-(mesh_ratio*radius/2+(FDTD_ratio*radius/2-mesh_ratio*radius/2)/2)*1e-9); #between bottom particle and bottom fdtd
+            #set("injection axis","z");
+            #set("direction","forward");
+            #set("wavelength start", lambda_start*1e-9);
+            #set("wavelength stop", lambda_stop*1e-9);
+            #set('x span',mesh_ratio*radius*1e-9);
+            #set('y span',mesh_ratio*radius*1e-9);
+            
+            if (small_monitor == 1)
+            {
+                addpower; #zoomed monitor
+                set("name","zoomed monitor");
+                set("monitor type",8);
+                set('x',2.8*radius*1e-9);
+                set('y',0);
+                set('z',0);
+                set('x span',0.5*W*radius*1e-9);
+                set('y span',0.5*W*radius*1e-9);
+                set('z span',0.5*W*radius*1e-9);
+                
+            }
+            if (full_monitor==1)
+            {
+                addpower; #full monitor
+                set("name","full monitor");
+                set("monitor type",6);
+                set('x',0);
+                set('y',0);
+                set('z',0);
+                set('x span',mesh_ratio*radius*1e-9);
+                set('z span',mesh_ratio*radius*1e-9);
+                
+                
+            }
+            
+            if(run_sim == 1)#running sim and analysing results
+            {
+                run;
+                
+                E=getelectric("zoomed monitor");
+                E_mean =  zeros(N_freq);
+                for (i=1:N_freq)
+                {
+                    E_volume=E(1:end,1:end,1:end,i);
+                    E_mean(i) = mean(E_volume);
+                }
+                lambda_plot = linspace(lambda_stop,lambda_start,N_freq);
+                
+                #small monitor
+                matlabfile = "small_monitor_cone"+num2str(round(jj));
+                matlabsave(matlabfile,lambda_plot,E_mean);
+                
+                
+                #large monitor
+                E_large = getelectric("full monitor");
+                matlabfile2 = "large_monitor_cone"+num2str(round(jj));
+                matlabsave(matlabfile2, E_large);
+                
+                
+                ?"finished "+num2str(cntr)+" out of "+num2str(N_total)+ " simulations";
+                
+                if(cntr!=N_total)
+                {
+                    switchtolayout;
+                }
+                
+            }
+        }
+    }
+}
+holdoff;

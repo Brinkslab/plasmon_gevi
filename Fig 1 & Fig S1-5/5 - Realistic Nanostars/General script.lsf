@@ -1,0 +1,250 @@
+# Initialization
+#clear ; # clear all declared variables
+switchtolayout;
+deleteall;
+
+simtime =50; # simulation time in fs
+meshacc =2; # mesh accuracy (1= lowest , 8= highest )
+detail=50; # number of mesh per smallest detail
+
+lambda_start =300; # wavelength start in nm
+lambda_stop =1000; # wavelength stop in nm
+n_freq =701; # number of points in the frequency spectrum
+
+D=4; # distance of the 3D monitor from the particle 's spikes in nm
+
+f_print="[NS]screening.txt "; # text file with results
+
+if ( fileexists ( f_print )) { rm( f_print );} # remove the file it if already exists
+
+# Write results file header
+write ( f_print ,"Screening of Au NSs");
+write ( f_print ,"Dimensions and Wavelenght in nm , |E |^2/| E0 |^2 in a.u.");
+write ( f_print ," ");
+write ( f_print ,"R [nm] lambda [nm] Avg F.E. [a.u.]");
+AvgE = zeros ( n_freq ); # reset the array containing the average field enh .
+
+# Gold Nanostars File read
+M=read('nanostars.txt');
+MM=splitstring(M,endl);
+Props=5; #amount of properties per nanostar
+
+# Options
+FuncLayer=false; FuncLayerSize=10; FuncLayerMat='PEG';#nm 
+Symmetry=false;
+SphericalLayer=false;
+AutomaticSimtime=true;
+
+# Parameter Sweep Options
+LoopOverFiles=true; WhichStar=3;
+LoopOverLayers=false; FLS=linspace(0,10,2);#(min(nm),max(nm),steps)
+LoopOverMeshDetail=false; MD=linspace(45,50,2);
+LoopOverSimTime=false; ST=linspace(20,200,10);
+
+# Setting up the loops
+if (LoopOverFiles==true)
+{N_Files=length(MM)/Props;i_N=1:N_Files;}
+else
+{i_N=WhichStar;}
+if (LoopOverLayers==true)
+{N_Layers=length(FLS);j_N=1:N_Layers;}
+else
+{j_N=1;FLS=FuncLayerSize;}
+if (LoopOverMeshDetail==true)
+{N_Details=length(MD);k_N=1:N_Details;}
+else
+{k_N=1;MD=detail;}
+if (LoopOverSimTime==true)
+{N_SimTimes=length(ST);l_N=1:N_SimTimes;}
+else
+{l_N=1;ST=simtime;}
+
+NSims=length(MM)/Props;
+#UUU=zeros(NSims,n_freq);
+AvgELambda=matrixdataset;
+
+    
+setglobalmonitor ("frequency points",n_freq ); #Set global monitors frequency points
+
+R=str2num(MM{1*Props-3});
+L_tip=str2num(MM{1*Props-2});
+Svs=str2num(MM{1*Props-1});
+RBase=str2num(MM{1*Props});
+FuncLayerSize=FLS(1);
+detail=MD(1);
+if (AutomaticSimtime==true)
+{simtime=10+R;}
+else
+{simtime=ST(1);}
+
+# Water
+addrect ;
+set('name','water ');
+set('x' ,0);
+set('y' ,0);
+set('z' ,0);
+set('x span', 2e-6);
+set('y span', 2e-6);
+set('z span', 2e-6);
+set('material','H2O (Water) - Palik');
+set('override mesh order from material database',true);
+set('mesh order' ,4);
+set('render type','wireframe');    
+
+#Simulation region
+addfdtd ;
+set('x' ,0);
+set('y' ,0);
+set('z' ,0);
+set('x span', (800+2* R+2* L_tip )*1e-9);
+set('y span', (800+2* R+2* L_tip )*1e-9);
+set('z span', (800+2* R+2* L_tip )*1e-9);
+set('simulation time',simtime *1e-15) ;
+set('mesh accuracy',meshacc );
+if (Symmetry==true)
+{
+    set('x min bc' ,5); # symmetry
+    #set('y min bc' ,4); # symmetry
+}
+
+# TFSF Source
+addtfsf ;
+set('x' ,0);
+set('y' ,0);
+set('z' ,0);
+set('x span', (8*R)*1e-9);
+set('y span', (8*R)*1e-9);
+set('z span', (8*R)*1e-9);
+set('wavelength start', lambda_start *1e-9);
+set('wavelength stop', lambda_stop *1e-9);
+set('direction' ,1); # Backward direction
+
+# Uniform mesh inside TFSF region
+addmesh ;
+set('dx',R/ detail *1e-9);
+set('dy',R/ detail *1e-9);
+set('dz',R/ detail *1e-9);
+set('x' ,0);
+set('y' ,0);
+set('z' ,0);
+set('x span', (2*R+2* L_tip )*1e-9);
+set('y span', (2*R+2* L_tip )*1e-9);
+set('z span', (2*R+2* L_tip )*1e-9);
+
+# Field monitors
+addpower ;
+set('name','E');
+set('monitor type' ,8); #3D power monitor
+set('x' ,(1.5*R+D+L_tip )*1e-9);
+set('y' ,0);
+set('z' ,0);
+set('x span', R*1e-9);
+set('y span', R*1e-9);
+set('z span', R*1e-9);
+
+# Cross section monitors - Absorption ( inside TFSF region )
+addobject ('cross_section');
+set('name','cs_abs');
+set('x' ,0);
+set('y' ,0);
+set('z' ,0);
+set('x span' ,(2*R+ 3*L_tip )*1e-9);
+set('y span' ,(2*R+ 3*L_tip )*1e-9);
+set('z span' ,(2*R+ 3*L_tip )*1e-9);
+
+# Cross section monitors - Scattering ( outside TFSF region )
+addobject ('cross_section');
+set('name','cs_sca');
+set('x' ,0);
+set('y' ,0);
+set('z' ,0);
+set('x span' ,(12*R)*1e-9);
+set('y span' ,(12*R)*1e-9);
+set('z span' ,(12*R)*1e-9);
+
+for (xx=i_N) #cycle different files
+{
+    for (yy=j_N) #cycle different layers
+    {    
+        for (zz=k_N) #cycle different detail sizes
+        {        
+            for (aa=l_N)
+            {          
+                switchtolayout;
+                #deleteall;
+                select('nanostar');
+                delete;
+                
+                R=str2num(MM{xx*Props-3});
+                L_tip=str2num(MM{xx*Props-2});
+                Svs=str2num(MM{xx*Props-1});
+                RBase=str2num(MM{xx*Props});
+                FuncLayerSize=FLS(yy);
+                detail=MD(zz);
+                if (AutomaticSimtime==true)
+                {simtime=10+R;}
+                else
+                {simtime=ST(aa);}
+                
+                # Gold nanostar
+                stlimport(MM{xx*Props-4},1e-8);
+                set('name','nanostar');
+                set('material','Au (Gold) - CRC');
+                set('x' ,0);
+                set('y' ,0);
+                set('z' ,0);
+                set('override mesh order from material database',true );
+                set('mesh order' ,2);
+                set('first axis','z');
+                set('rotation 1',90);
+                
+                # Nanostar setup - PEG sphere
+                if (FuncLayer==true)
+                {
+                    if(SphericalLayer==true)
+                    {addsphere;set('radius',(R+FuncLayerSize)*1e-9);}
+                    else
+                    {stlimport(MM{xx*Props-2},((R+FuncLayerSize)/(R))*1e-8);}
+                    set('name',FuncLayerMat+'Layer');
+                    set('material',FuncLayerMat);
+                    set('x' ,0);
+                    set('y' ,0);
+                    set('z' ,0);
+                    set('render type','wireframe');
+                    set('override mesh order from material database',true);
+                    set('mesh order' ,3);
+                }
+                
+                run; # Start the simulation
+                
+                E= getelectric ('E'); # Return |E |^2/| E0 |^2 in 4D matrix E
+                Elambda = getresult ('E','E');
+                lambda_array =(Elambda.lambda)*1e9; # Pick the array of measured wavelengths(not linear )
+                
+                for(j=1: n_freq )
+                {
+                Ej= pinch (E ,4,j); # Pick the 3D matrix at the desired frequency
+                AvgE (j)= mean (Ej); # Calculate the average field enhancement
+                }
+                
+               
+                if (xx==1) {AvgELambda.addparameter('lambda',lambda_array);}
+                AvgELambda.addattribute('avarage field enhancement'+num2str(xx),AvgE);
+                
+                pos= findpeaks ( AvgE ); # Find peak position
+                write ( f_print , num2str (R)+" "+ num2str ( lambda_array (pos))+" "+ num2str ( AvgE(pos))); # Write one row of data (radius , lambda peak , avg F.E.)
+                
+                cs_A = getresult ('cs_abs','sigma'); # Return absorption cross section
+                cs_S = getresult ('cs_sca','sigma'); # Return scattering cross section
+                print_cs_A =[cs_A.lambda*1e9,-cs_A.sigma]; # Create matrix with two columns( wavelength , cross section )
+                print_cs_S =[cs_S.lambda*1e9,cs_S.sigma]; # Create matrix with two columns (wavelength , cross section )
+                TitleCs='R'+num2str (R)+'L'+num2str(L_tip)+'S'+num2str (Svs)+'B'+num2str (RBase)+'D'+num2str (detail)+'T'+num2str (simtime)+'V'+num2str (xx);
+                write ('[4] cs_abs_ '+TitleCs+'.txt ',num2str ( print_cs_A )); # Write a textfile with the absorption cross section
+                write ('[4] cs_sca_ '+TitleCs+'.txt ',num2str ( print_cs_S )); # Write a textfile with the scattering cross section
+                
+            }
+        }
+    }
+}
+
+matlabsave(TitleCs,AvgELambda);

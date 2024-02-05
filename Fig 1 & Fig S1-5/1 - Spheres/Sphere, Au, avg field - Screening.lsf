@@ -1,0 +1,50 @@
+#Initialization
+clear;
+deleteall; 
+
+simtime=150; #simulation time in fs
+meshacc=1; #mesh accuracy
+detail=40; #number of mesh per radius
+
+lambda_start=300; #wavelenght start in nm
+lambda_stop=800; #wavelenght start in nm
+n_freq=501; #number of points in the spectrum
+
+points_R=20;
+R_array=linspace(6,44,points_R);
+D=4;
+
+f_maxe="[3] screening_new_fine2.txt";
+
+if (fileexists(f_maxe)) { rm(f_maxe);} # remove the file it if already exists
+
+write(f_maxe,"Screening of Au Spherical NP");
+write(f_maxe,"Dimensions and Wavelenght in nm, |E|^2/|E0|^2 in a.u.");
+write(f_maxe,"   ");
+write(f_maxe,"R[nm]	lambda [nm]	Avg F.E. [nm]");
+
+AvgE=zeros(n_freq);
+
+for(i_R=1;i_R<=points_R;i_R=i_R+1)
+{
+    switchtolayout;
+    deleteall;
+    R=R_array(i_R);
+    
+    feval("D:\Marco\FDTD Solutions\Scripts\AuSphereSetupAVG_Field.lsf");
+    
+    run;
+    
+    E=getelectric('E'); #Returns |E|^2
+    merda=getresult('E','E');
+    lambda_array=(merda.lambda)*1e9;
+
+    for(j=1:n_freq)
+    {
+        Ej=pinch(E,4,j);
+        AvgE(j)=mean(Ej);
+    }
+    
+    pos=findpeaks(AvgE); #peak position
+    write(f_maxe, num2str(R)+"	"+num2str(lambda_array(pos))+"	"+num2str(AvgE(pos)));  
+}

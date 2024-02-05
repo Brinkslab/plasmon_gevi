@@ -1,0 +1,63 @@
+#Initialization
+clear;
+deleteall; 
+
+simtime=200; #simulation time in fs
+meshacc=2; #mesh accuracy
+detail=30; #number of mesh per radius
+
+lambda_start=300; #wavelenght start in nm
+lambda_stop=1000; #wavelenght start in nm
+n_freq=701; #number of points in the spectrum
+f_array=linspace(1/lambda_stop,1/lambda_start,n_freq); #NOTE: c=1 to simplify
+lambda_array=1/f_array;#NOTE: c=1 to simplify
+
+points_R=7;
+R_min=20;
+R_max=50;
+R_array=linspace(R_min,R_max,points_R);
+
+D=4;
+L_tip=10;
+r_tip=3;
+theta=40;
+r=10;
+
+f_maxe="[NS] screening.txt";
+
+if (fileexists(f_maxe)) { rm(f_maxe);} # remove the file it if already exists
+
+write(f_maxe,"Screening of Au NSs");
+write(f_maxe,"Dimensions and Wavelenght in nm, |E|^2/|E0|^2 in a.u.");
+write(f_maxe,"   ");
+write(f_maxe,"R [nm]	lambda [nm]	Avg F.E. [nm]");
+
+AvgE=zeros(n_freq);
+
+for(i_R=1;i_R<=points_R;i_R=i_R+1)
+{
+    switchtolayout;
+    deleteall;
+    R=R_array(i_R);
+            
+    feval('D:\Marco\FDTD Solutions\[NS] Au nanostars\ns_setup.lsf');
+            
+    run;
+            
+    E=getelectric('E'); #Returns |E|^2
+    for(j=1:n_freq)
+    {
+        Ej=pinch(E,4,j);
+        AvgE(j)=mean(Ej);
+    }
+            
+    pos=findpeaks(AvgE); #peak position
+    write(f_maxe, num2str(R)+"	"+num2str(lambda_array(pos))+"	"+num2str(AvgE(pos)));  
+
+    cs_A=getresult('cs_abs','sigma');
+    cs_S=getresult('cs_sca','sigma');
+    print_cs_A=[cs_A.lambda*1e9,-cs_A.sigma];
+    print_cs_S=[cs_S.lambda*1e9,cs_S.sigma];
+    write('[4] cs_abs_'+num2str(R)+'.txt',num2str(print_cs_A));
+    write('[4] cs_sca_'+num2str(R)+'.txt',num2str(print_cs_S));
+}

@@ -1,0 +1,65 @@
+#Initialization
+clear;
+deleteall; 
+
+simtime=150; #simulation time in fs
+meshacc=1; #mesh accuracy
+detail=20; #number of mesh per radius
+
+lambda_start=300; #wavelenght start in nm
+lambda_stop=800; #wavelenght start in nm
+n_freq=501; #number of points in the spectrum
+
+points_l=17;
+l_array=linspace(20,100,points_l);
+points_w=7;
+w_array=linspace(20,50,points_w);
+points_H=7;
+H_array=linspace(20,50,points_H);
+
+D=4;
+
+f_maxe="[2] screening.txt";
+
+if (fileexists(f_maxe)) { rm(f_maxe);} # remove the file it if already exists
+
+write(f_maxe,"Screening of Au Smoothed quadrilateral NP");
+write(f_maxe,"Dimensions and Wavelenght in nm, |E|^2/|E0|^2 in a.u.");
+write(f_maxe,"   ");
+write(f_maxe,"l [nm]	w [nm]	H [nm]	lambda [nm]	Avg F.E. [nm]");
+
+AvgE=zeros(n_freq);
+
+for(i_H=1:points_H)
+{
+    for(i_w=1:points_w)
+    {
+        for(i_l=1;i_l<=points_l;i_l=i_l+1)
+        {
+            switchtolayout;
+            deleteall;
+            l=l_array(i_l);
+            w=w_array(i_w);
+            H=H_array(i_H);
+            
+            feval("D:\Marco\FDTD Solutions\Scripts\AuSmoothRectSetupAVG_Field.lsf");          
+            
+            run;
+            
+            E=getelectric('E'); #Returns |E|^2
+            merda=getresult('E','E');
+            lambda_array=(merda.lambda)*1e9;            
+            
+            for(j=1:n_freq)
+            {
+                Ej=pinch(E,4,j);
+                AvgE(j)=mean(Ej);
+            }
+            
+            pos=findpeaks(AvgE); #peak position
+            write(f_maxe, num2str(l)+"	"+num2str(w)+"	"+num2str(H)+"	"+num2str(lambda_array(pos))+"	"+num2str(AvgE(pos)));  
+            if(lambda_array(pos)>780)
+            {    i_l=points_l+1;}
+        }
+    }
+}
