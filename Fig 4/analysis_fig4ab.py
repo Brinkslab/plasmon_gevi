@@ -12,8 +12,7 @@ from cmcrameri import cm
 from scipy.signal import argrelextrema
 import matplotlib.ticker as ticker
 
-# path='M:/tnw/ist/do/projects/Neurophotonics/Brinkslab/Data/Marco/phd/2023-09-15 Before after NSs - Q1/'
-path='M:/tnw/ist/do/projects/Neurophotonics/Brinkslab/Data/Marco/phd/2023-03-21 Before after NSs - Q6a - 100ms exposure - telescope/'
+path=''
 
 plt.rcParams.update({'font.size': 16})
 
