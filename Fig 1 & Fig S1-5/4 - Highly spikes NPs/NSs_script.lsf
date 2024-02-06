@@ -40,7 +40,7 @@ for(i_R=1;i_R<=points_R;i_R=i_R+1)
     deleteall;
     R=R_array(i_R);
             
-    feval('D:\Marco\FDTD Solutions\[NS] Au nanostars\ns_setup.lsf');
+    feval('.\ns_setup.lsf');
             
     run;
             
