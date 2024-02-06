@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import matplotlib.ticker as ticker
 
-folder="M:/tnw/ist/do/projects/Neurophotonics/Brinkslab/People/Marco Locarno/PhD/Archive previous years/2022/FDTD nanoparticles/results/Field Enhancement nanostar/Results - Field enhancement maps/"
+folder=""
 file_name="SIM_lambda650nm_XY"
 file_path=folder+file_name+".txt"
 pixels=561
