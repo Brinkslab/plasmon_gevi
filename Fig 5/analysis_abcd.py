@@ -12,9 +12,9 @@ from cmcrameri import cm
 from scipy.signal import argrelextrema
 from scipy.optimize import curve_fit
 
-path_Control='M:/tnw/ist/do/projects/Neurophotonics/Brinkslab/Data/GR project/2022-03-17 GR new single+combo mutants and arch versions/QuasAr6a/patchclamp/'
-path_NSs='M:/tnw/ist/do/projects/Neurophotonics/Brinkslab/Data/Marco/phd/2023-01-24 Patch Clamp QuasAr6a on NSs/'
-path_Analysis='M:/tnw/ist/do/projects/Neurophotonics/Brinkslab/Data/Marco/phd/2024-01-30 Sensitivity speed analysis Q6 NSs (new)/'
+path_Control=''
+path_NSs=''
+path_Analysis=''
 folder_Control=np.array(['cell1/more focused/','cell2/square 5hz/','cell3/square 5hz/','cell4/square 5hz/'])
 folder_NSs=np.array(['cell1/','cell2/','cell3/','cell4/','cell5/'])
 name='1000fps.tif'
