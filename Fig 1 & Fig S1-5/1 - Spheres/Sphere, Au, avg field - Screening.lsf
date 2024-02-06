@@ -31,7 +31,7 @@ for(i_R=1;i_R<=points_R;i_R=i_R+1)
     deleteall;
     R=R_array(i_R);
     
-    feval("D:\Marco\FDTD Solutions\Scripts\AuSphereSetupAVG_Field.lsf");
+    feval(.\AuSphereSetupAVG_Field.lsf");
     
     run;
     
