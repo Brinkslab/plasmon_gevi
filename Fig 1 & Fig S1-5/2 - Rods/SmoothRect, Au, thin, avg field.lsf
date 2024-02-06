@@ -47,8 +47,8 @@ for(i_H=1:points_H)
             run;
             
             E=getelectric('E'); #Returns |E|^2
-            merda=getresult('E','E');
-            lambda_array=(merda.lambda)*1e9;            
+            Eresult=getresult('E','E');
+            lambda_array=(Eresult.lambda)*1e9;            
             
             for(j=1:n_freq)
             {
