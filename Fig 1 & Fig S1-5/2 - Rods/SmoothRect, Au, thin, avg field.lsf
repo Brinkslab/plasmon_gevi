@@ -42,7 +42,7 @@ for(i_H=1:points_H)
             w=w_array(i_w);
             H=H_array(i_H);
             
-            feval("D:\Marco\FDTD Solutions\Scripts\AuSmoothRectSetupAVG_Field.lsf");          
+            feval(".\AuSmoothRectSetupAVG_Field.lsf");          
             
             run;
             
